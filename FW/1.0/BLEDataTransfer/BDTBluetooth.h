@@ -24,6 +24,7 @@ extern CONetwork net;
 #define ACCELEROMETER_DATA_MAX_LEN      3
 #define CONNECTION_DATA_MAX_LEN         20
 #define SETTINGS_DATA_MAX_LEN           1
+#define MESSAGE_DATA_MAX_LEN            20
 
 #define DIGITAL_OUT_PIN                 D7
 //#define SERVO_PIN                       D4
@@ -43,6 +44,7 @@ static uint8_t lightingNotificationsUUID[16]      = {0x75,0x3d,0x00,0x02,0x50,0x
 static uint8_t accelerometerNotificationsUUID[16] = {0x76,0x3d,0x00,0x02,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e};
 static uint8_t connectionNotificationsUUID[16]    = {0x77,0x3d,0x00,0x02,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e};
 static uint8_t settingsNotificationsUUID[16]    = {0x77,0x3d,0x00,0x02,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e};
+static uint8_t messageNotificationsUUID[16]    = {0x77,0x3d,0x00,0x02,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e};
 
 static uint8_t  appearance[1]    = {0x180};
 static uint8_t  change[2]        = {0x00, 0x00};
@@ -58,6 +60,7 @@ static uint16_t lightingHandler       = 0x0000;
 static uint16_t accelerometerHandler  = 0x0000;
 static uint16_t connectionHandler     = 0x0000;
 static uint16_t settingsHandler       = 0x0000;
+static uint16_t messageHandler       = 0x0000;
 
 static uint8_t switchData[SWITCH_DATA_MAX_LEN] = {0x01};
 static uint8_t notificationsData[NOTIFICATION_DATA_MAX_LEN] = {0x00};
@@ -65,6 +68,7 @@ static uint8_t temperatureData[TEMPERATURE_DATA_MAX_LEN] = {0x00, 0x00, 0x00, 0x
 static uint8_t batteryData[BATTERY_DATA_MAX_LEN] = {0x00, 0x00};
 static uint8_t connectionData[CONNECTION_DATA_MAX_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t settingsData[SETTINGS_DATA_MAX_LEN] = {0x00};
+static uint8_t messageData[MESSAGE_DATA_MAX_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static btstack_timer_source_t notificationTimer;
 
@@ -85,7 +89,7 @@ void sendStringOnParts(String string) {
       const uint8_t max_msg_len = 20;
       const uint8_t strLen =  string.length();
       char charString[strLen];
-      string.toCharArray(charString, strLen);
+      string.toCharArray(charString, strLen+1);
       
       //send info message
       unsigned char* hash = BDTMD5::make_hash(charString);
@@ -94,23 +98,26 @@ void sendStringOnParts(String string) {
       
       uint8_t infoMsg[max_msg_len] ;
       infoMsg[0] = 0xce;
+      infoMsg[1] = 0xce;
+      infoMsg[2] = 0xce;
+      infoMsg[3] = 0xce;
       for (uint8_t i = 4; i < max_msg_len; i++) {
         infoMsg[i] = md5str[max_msg_len-i];
       }
-      ble.sendNotify(notificationHandler, infoMsg, 20);
+      ble.sendNotify(notificationHandler, infoMsg, 3);
       free(md5str);
       
       //send data messages
       bool notFinished = true;
-      uint8_t m = 0;
+      uint16_t m = 0;
       
       while (notFinished) {
         uint8_t msg[max_msg_len] = {};
-        uint16_t len = 0;
+        uint8_t len = 0;
         
         for (uint8_t n = 0; n < max_msg_len;  n++) {
         
-          if (strLen < ((m*max_msg_len)+n) ) {
+          if (strLen <= ((m*max_msg_len)+n) ) {
             notFinished = false;
             break;
           }
@@ -150,6 +157,7 @@ void processSwitchData(uint8_t *buffer) {
           digitalWrite(DIGITAL_OUT_PIN, LOW);
       }
   }
+  sendStringOnParts("Tady posilam prvni zpravu, tak uvidime, co jakox");
 //  else if (switchData[0] == 0x03) { // Command is to control Servo pin
 //      myservo.write(switchData[1]);
 //  }
@@ -331,8 +339,9 @@ void setupBLE() {
     ble.addService(service1_uuid);
     switchHandler = ble.addCharacteristicDynamic(switchDataUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE|ATT_PROPERTY_WRITE_WITHOUT_RESPONSE, switchData, SWITCH_DATA_MAX_LEN);
     notificationHandler = ble.addCharacteristicDynamic(notificationsUUID, ATT_PROPERTY_NOTIFY, notificationsData, NOTIFICATION_DATA_MAX_LEN);
-    temperatureHandler = ble.addCharacteristicDynamic(temperatureNotificationsUUID, ATT_PROPERTY_NOTIFY, notificationsData, TEMPERATURE_DATA_MAX_LEN);
+    temperatureHandler = ble.addCharacteristicDynamic(temperatureNotificationsUUID, ATT_PROPERTY_NOTIFY, temperatureData, TEMPERATURE_DATA_MAX_LEN);
     connectionHandler = ble.addCharacteristicDynamic(connectionNotificationsUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE, connectionData, CONNECTION_DATA_MAX_LEN);
+    messageHandler = ble.addCharacteristicDynamic(messageNotificationsUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE, messageData, MESSAGE_DATA_MAX_LEN);
     
     adv_params.adv_int_min = 0x00A0;
     adv_params.adv_int_max = 0x01A0;
