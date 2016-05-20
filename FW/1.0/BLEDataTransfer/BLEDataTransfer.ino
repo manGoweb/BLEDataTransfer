@@ -11,6 +11,7 @@ SYSTEM_MODE(AUTOMATIC); //connect to cloud
 #include "COSensors.h"
 #include "BDTBluetooth.h"
 #include "BDTMD5.h"
+#include "BTDMessageSevice.h"
 
 
 //BDTBluetooth bt = BDTBluetooth();
@@ -25,7 +26,7 @@ void setup() {
 }
 
 void loop() {
-  sensors.getExternalTemperature(0);
+  //sensors.getExternalTemperature(0);
 
   RGB.control(true);
   RGB.color(0, 255, 0);
@@ -33,6 +34,10 @@ void loop() {
   RGB.color(255, 255, 255);
   delay(500);
   RGB.color(0, 0, 255);
+
+  // this should be deleted after testing
+  sendStringOnParts("This should be deleted after testing of sending messages via bluetooth");
+  delay(5000);
 
 
   

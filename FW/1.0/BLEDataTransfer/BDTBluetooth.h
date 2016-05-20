@@ -95,7 +95,7 @@ static void sendStringOnParts(String string) {
       unsigned char* hash = BDTMD5::make_hash(charString);
       char *md5str = BDTMD5::make_digest(hash, 16);
       //Serial.write(hash, strLen);
-      Serial.println(md5str);
+//      Serial.println(md5str);
       
       uint8_t infoMsg[max_msg_len] ;
       infoMsg[0] = 0xce;
@@ -128,13 +128,14 @@ static void sendStringOnParts(String string) {
             len++;
         }
         m++;
-        Serial.println("-----------------");
-        Serial.write(msg, len);
-        Serial.println("");
+//        Serial.println("-----------------");
+//        Serial.write(msg, len);
+//        Serial.println("");
         ble.sendNotify(messageHandler, msg, len);
       }
+      free(hash);
       free(md5str);
-      Serial.println("BLE whole string sent");
+//      Serial.println("Whole message sent");
     }
     else {
       Serial.println("BLE can't send data");
@@ -175,7 +176,8 @@ void processSwitchData(uint8_t *buffer) {
 void deviceConnectedCallback(BLEStatus_t status, uint16_t handle) {
     switch (status) {
         case BLE_STATUS_OK:
-            Serial.println("Device connected!");
+            Serial.print(handle, HEX);
+            Serial.println(" Device connected!");
             break;
         default:
             break;
@@ -211,6 +213,9 @@ int gattWriteCallback(uint16_t value_handler, uint8_t *buffer, uint16_t size) {
       Serial.println(" ");
       
       processSwitchData(buffer);
+    }
+    else if (messageHandler == value_handler) {
+      Serial.print(" - Message");
     }
     Serial.println("");
     return 0;
@@ -339,11 +344,10 @@ void setupBLE() {
     ble.addCharacteristic(0x2A05, ATT_PROPERTY_INDICATE, change, sizeof(change));
     
     ble.addService(service1_uuid);
-    messageHandler = ble.addCharacteristicDynamic(messageNotificationsUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE, messageData, MESSAGE_DATA_MAX_LEN);
+    messageHandler = ble.addCharacteristicDynamic(messageNotificationsUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE|ATT_PROPERTY_WRITE_WITHOUT_RESPONSE, messageData, MESSAGE_DATA_MAX_LEN);
     switchHandler = ble.addCharacteristicDynamic(switchDataUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE|ATT_PROPERTY_WRITE_WITHOUT_RESPONSE, switchData, SWITCH_DATA_MAX_LEN);
     notificationHandler = ble.addCharacteristicDynamic(notificationsUUID, ATT_PROPERTY_NOTIFY, notificationsData, NOTIFICATION_DATA_MAX_LEN);
     connectionHandler = ble.addCharacteristicDynamic(connectionNotificationsUUID, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE, connectionData, CONNECTION_DATA_MAX_LEN);
-    temperatureHandler = ble.addCharacteristicDynamic(temperatureNotificationsUUID, ATT_PROPERTY_NOTIFY, temperatureData, TEMPERATURE_DATA_MAX_LEN);
     
     adv_params.adv_int_min = 0x00A0;
     adv_params.adv_int_max = 0x01A0;
