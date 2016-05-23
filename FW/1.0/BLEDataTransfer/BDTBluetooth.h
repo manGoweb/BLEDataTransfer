@@ -7,6 +7,7 @@
 #include "CONetwork.h"
 #include "Packeteer.h"
 #include "BDTMD5.h"
+#include "BDTMessageService.h"
 
 
 extern COSensors sensors;
@@ -77,6 +78,8 @@ static advParams_t adv_params;
 static uint8_t adv_data[] = {0x02,0x01,0x06,0x08,0x08,'m','a','n','G','o','B','T',0x11,0x07,0x1e,0x94,0x8d,0xf1,0x48,0x31,0x94,0xba,0x75,0x4c,0x3e,0x50,0x00,0x00,0x3d,0x71};
 
 static uint8_t currentSendDataSkipStep = 0;
+
+static BDTMessageService msgService = BDTMessageService();
 
 /******************************************************
  *               Function Definitions
@@ -215,7 +218,11 @@ int gattWriteCallback(uint16_t value_handler, uint8_t *buffer, uint16_t size) {
       processSwitchData(buffer);
     }
     else if (messageHandler == value_handler) {
-      Serial.print(" - Message");
+      Serial.print(" - Message | ");
+      if (msgService.processMessage(buffer, size)) {
+        Serial.print("There is a valid message: ");
+        Serial.println(msgService.currentMsg);
+      }
     }
     Serial.println("");
     return 0;

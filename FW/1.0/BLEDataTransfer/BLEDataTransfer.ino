@@ -11,7 +11,7 @@ SYSTEM_MODE(AUTOMATIC); //connect to cloud
 #include "COSensors.h"
 #include "BDTBluetooth.h"
 #include "BDTMD5.h"
-#include "BTDMessageSevice.h"
+#include "BDTMessageService.h"
 
 
 //BDTBluetooth bt = BDTBluetooth();
