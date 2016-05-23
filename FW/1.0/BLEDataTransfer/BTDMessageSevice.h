@@ -20,15 +20,13 @@ public:
   }
 
   bool addString(String str) {
-
     currentMsg += str;
-
-    return false;
+    return isCurrentMsgValid();
   }
 
   bool isCurrentMsgValid() {
  
-    if (incommingHash != "") {
+    if (incommingHash == "" || currentMsg.length() == 0) {
       return false;
     }
     const uint8_t strLen =  currentMsg.length();
