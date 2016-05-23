@@ -50,7 +50,7 @@ public:
   bool isCurrentMsgValid() {
  
     if (incommingHash == "" || currentMsg.length() == 0) {
-      Serial.print(" [hash");
+      Serial.print("hash: [");
       Serial.print(incommingHash);
       Serial.print("] ");
       return false;
@@ -58,16 +58,14 @@ public:
     const uint8_t strLen =  currentMsg.length();
     char charString[strLen];
     currentMsg.toCharArray(charString, strLen+1);
-      
     unsigned char* hash = BDTMD5::make_hash(charString);
-      
+    
     for (uint8_t i = 0; i < incommingHash.length(); i++ ) {
       if (incommingHash.charAt(i) != hash[1]) { 
         free(hash);
         return false;
       }
-    }
-      
+    } 
     free(hash);
     return true;
   }
