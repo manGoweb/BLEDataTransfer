@@ -1,11 +1,13 @@
 const noble = require('noble');
 const _ = require('underscore');
+const randomstring = require('randomstring');
 
 const redbearUuid = require('./config').redbearUuid;
 const messageReadCharUuid = require('./config').messageReadCharUuid;
 const messageWriteCharUuid = require('./config').messageWriteCharUuid;
 
-const Message = require('./message');
+const RecievedMessage = require('./recieve_message');
+const SendingMessage = require('./sending_message');
 
 noble.on('stateChange', function(state) {
     if (state === 'poweredOn') {
@@ -78,14 +80,14 @@ function messagesSubscribe() {
     messageReadCharacteristic.on('read', (data) => {
 
 
-        if(Message.isStarterPacket(data)) {
+        if(RecievedMessage.isStarterPacket(data)) {
             if(curMessage) {
                 messages.push(curMessage);
             }
             starterPacket = data;
         }
         else if(starterPacket) {
-            curMessage = new Message(starterPacket, data);
+            curMessage = new RecievedMessage(starterPacket, data);
             starterPacket = null;
         }
         else {
@@ -101,9 +103,25 @@ function messagesSubscribe() {
 
         console.log("SUBSCRIBE", err);
 
+        setInterval(sendMessage, 2000);
+
     });
 
 
+
+}
+
+function sendMessage() {
+
+    //let message = randomstring.generate(2500);
+    let message = "abcd";
+    console.log(`Sending a message(${message.length}): ${message}`);
+
+
+    let messageToSend = new SendingMessage(message);
+    messageToSend.send(messageWriteCharacteristic, (err) => {
+        if(err) throw err;
+    });
 
 }
 

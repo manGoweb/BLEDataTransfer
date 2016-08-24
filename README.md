@@ -18,4 +18,4 @@ limit for message is 2^32 (4 294 967 296) characters.
 #### Third to n-th packet
 1. `20B` of data
 
-If message length isn't modulo 20, the unused last packet's bytes are filled by null terminator (`0x00)`).
+If message length isn't modulo 20, the unused last packet's bytes are filled by null terminator `0x00`.

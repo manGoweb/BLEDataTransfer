@@ -118,7 +118,7 @@ int gattWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
   Serial.println(value_handle, HEX);
 
   if (character1_handle == value_handle) {
-      Serial.print(" - Message | ");
+      Serial.println("Message start:");
       if (msgService.processMessage(buffer, size)) {
         Serial.print("There is a valid message: ");
         Serial.println(msgService.currentMsg);
@@ -221,8 +221,8 @@ void setup() {
 void loop() {
 
 
-      delay(5000);
-      msgService.sendStringOnParts("Ahoj tohle je very first message timle podivnym peklostrojem! Dlouha jako krava a plna podivnych znaku {\"json\":\"adasdasasdasasdasd\"}", character2_handle);
+      //delay(5000);
+      //msgService.sendStringOnParts("Ahoj tohle je very first message timle podivnym peklostrojem! Dlouha jako krava a plna podivnych znaku {\"json\":\"adasdasasdasasdasd\"}", character2_handle);
 
 
 }

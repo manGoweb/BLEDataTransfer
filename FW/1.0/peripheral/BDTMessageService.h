@@ -6,47 +6,96 @@
 #include <string.h>
 #include "BDTMD5.h"
 
+#define STARTING_SYMBOL 0xCE
+#define PACKET_LENGTH 20
+
 class BDTMessageService {
 
+  
+  /*
   bool addString(String str) {
     currentMsg += str;
     return isCurrentMsgValid();
   }
-
   void setIncommingHash(String hash) {
     incommingHash = hash;
     currentMsg = "";
+  }*/
+
+  bool isStartingPacket(uint8_t *buffer) {
+
+    for(uint8_t i = 0; i < 4; i++) {
+      if(buffer[i] != STARTING_SYMBOL) {
+        return false;
+      }
+    }
+    return true;
+   
+  }
+
+  static bool areEqual(char *hash1, char *hash2, uint8_t size) {
+    for(uint8_t i = 0; i < size; i++) {
+      if(hash1[i] != hash2[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
 public:
 	BDTMessageService(){
 	};
 
-  String currentMsg;
-  String incommingHash;
+  String currentMsg = "";
+  unsigned int recievedMsgLen = 0;
+  uint8_t recievedMessageMd5[PACKET_LENGTH];
  
 
   bool processMessage(uint8_t *buffer, uint16_t size) {
 
-    String msg = (char*)buffer;
+    if(this->isStartingPacket(buffer)) {
+      Serial.println("This is starting packet");
 
-    Serial.println("_╬_");
-    for (uint16_t c = 0; c < size; c++) {
-      Serial.println(buffer[c]);
+      this->currentMsg = "";
+
+      // 4th - 8th byte message length
+      this->recievedMsgLen = (this->recievedMsgLen << 8) + buffer[7];
+      this->recievedMsgLen = (this->recievedMsgLen << 8) + buffer[6];
+      this->recievedMsgLen = (this->recievedMsgLen << 8) + buffer[5];
+      this->recievedMsgLen = (this->recievedMsgLen << 8) + buffer[4];
+
+      
+      // 9th to 20th byte md5 of previous 8 bytes
+      uint8_t md5len = PACKET_LENGTH - 8;
+      char md5hash[md5len];
+      for(uint8_t i = 0; i < md5len; i++) {
+        md5hash[i] = buffer[i+8];
+      }
+
+      // compute md5 and compare
+      char char_arr[9];
+      for(uint8_t i = 0; i < 8; i++) {
+        if(buffer[i] == 0x00) {
+          char_arr[i] = 0x30;
+        } else {
+          char_arr[i] = buffer[i];
+        }
+      }
+      char_arr[8] = 0x0;
+      unsigned char* computedHash = BDTMD5::make_hash(char_arr);
+      char *md5computed = BDTMD5::make_digest(computedHash, 12);
+      
+      if(this->areEqual(md5computed, md5hash, 12)) {
+        Serial.println("VALID MD5!");
+      }
+
+      free(computedHash);
+      free(md5computed);
+     
     }
-    Serial.println(msg.substring(0,1));
-    if ( (uint8_t) buffer[0] == (uint8_t) 0xce) {
-      Serial.println("pisu hash");
-      Serial.println(msg.substring(4,size));
-      setIncommingHash(msg.substring(4,size));
-    }
-    else {
-      Serial.println(msg.substring(0,size));
-      return addString(msg.substring(0,size));
-    }
-    return false;
+    
   }
-
+  /*
   bool isCurrentMsgValid() {
  
     if (incommingHash == "" || currentMsg.length() == 0) {
@@ -68,7 +117,7 @@ public:
     } 
     free(hash);
     return true;
-  }
+  }*/
 
   void sendStringOnParts(String string, uint16_t msg_handler) {
 

@@ -2,12 +2,14 @@ const _ = require('underscore');
 const startSymbol = require('./config').startingSymbol;
 const md5 = require('md5');
 
-module.exports = class Message {
+const packetLen = require('./config').packetLength;
+
+module.exports = class RecieveMessage {
     constructor(firstPacket, secondPacket) {
         // FIRST PACKET
 
         // 4B of starting sequence
-        if(!Message.isStarterPacket(firstPacket)) {
+        if(!RecieveMessage.isStarterPacket(firstPacket)) {
             throw new Error("Wrong constructor parameter, must be a first packet");
         }
 
@@ -16,7 +18,7 @@ module.exports = class Message {
 
         // 12B of first 12B of md5 of previous 8B
         let recMd5 = '';
-        for(let i = 8; i < 20; i++) {
+        for(let i = 8; i < packetLen; i++) {
             recMd5 += String.fromCharCode(firstPacket[i]);
         }
 
@@ -28,9 +30,9 @@ module.exports = class Message {
                 first8B[i] = firstPacket[i];
             }
         }
-        let computedMd5 = md5(new Buffer(first8B));
 
-        if(!Message.compareHashes(recMd5,computedMd5,12)) {
+        let computedMd5 = md5(new Buffer(first8B));
+        if(!RecieveMessage.compareHashes(recMd5,computedMd5,12)) {
             throw new Error("Invalid message hash!");
         }
 
@@ -38,7 +40,7 @@ module.exports = class Message {
         // SECOND PACKET
         // 20B of following message md5
         this.receivedMessageMd5 = '';
-        for(let i = 0; i < 20; i++) {
+        for(let i = 0; i < packetLen; i++) {
             this.receivedMessageMd5 += String.fromCharCode(secondPacket[i]);
         }
         console.log("recieved msg md5: ", this.receivedMessageMd5);
@@ -46,7 +48,7 @@ module.exports = class Message {
     }
 
     addPacket(msg) {
-        if(Message.isStarterPacket(msg)) {
+        if(RecieveMessage.isStarterPacket(msg)) {
             throw new Error("Starting packet given!");
         }
 
@@ -54,7 +56,7 @@ module.exports = class Message {
         if(!this.msg) {
             this.msg = '';
         }
-        for(let i = 0; i < 20; i++) {
+        for(let i = 0; i < packetLen; i++) {
             if(msg[i] !== undefined) {
                 this.msg += String.fromCharCode(msg[i]);
             }
@@ -78,7 +80,7 @@ module.exports = class Message {
      * @param msg
      */
     static isStarterPacket(buffer) {
-        if(buffer.length !== 20)
+        if(buffer.length !== packetLen)
             return false;
 
         for(let i = 0; i < 4; i++) {
@@ -112,7 +114,7 @@ module.exports = class Message {
      */
     isValid() {
 
-        return Message.compareHashes(this.receivedMessageMd5, md5(this.msg), this.receivedMessageMd5.length);
+        return RecieveMessage.compareHashes(this.receivedMessageMd5, md5(this.msg), this.receivedMessageMd5.length);
 
     }
 };
