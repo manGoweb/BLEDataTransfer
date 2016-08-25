@@ -118,20 +118,22 @@ int gattWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
   Serial.println(value_handle, HEX);
 
   if (character1_handle == value_handle) {
-      Serial.println("Message start:");
+      Serial.println("Got message:");
       if (msgService.processMessage(buffer, size)) {
-        Serial.print("There is a valid message: ");
-        Serial.println(msgService.currentMsg);
+        if(msgService.isMessageComplete()) {
+          Serial.println("Message complete");
+          if(msgService.isMessageValid()) {
+            Serial.println("Message valid");
+          } else {
+            Serial.println("INVALID MESSAGE MD5");
+          }
+        } else {
+          Serial.println("Message isn't complete yet");
+        }
+      } else {
+        Serial.println("Something went wrong!");
       }
   
-    /*
-    memcpy(characteristic1_data, buffer, size);
-    Serial.print("Characteristic1 write value: ");
-    for (uint8_t index = 0; index < size; index++) {
-      Serial.write(characteristic1_data[index]);
-
-      Serial.print(" ");
-    }*/
     Serial.println(" ");
   }
   
