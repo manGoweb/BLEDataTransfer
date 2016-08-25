@@ -80,6 +80,19 @@ private:
       this->actualMsgLen += size;
       
     }
+
+    void reset() {
+        Serial.println("Message reset");
+        this->recievedMsgLen = 0;
+        this->actualMsgLen = 0;
+        this->firstPacketComplete = false;
+        this->secondPacketComplete = false;
+        this->messageComplete = false;
+        this->messageValid = false;
+        
+        if(this->messageBuffer != NULL)
+          free(this->messageBuffer);
+    }
     
     unsigned int recievedMsgLen = 0;
     unsigned int actualMsgLen = 0;
@@ -124,11 +137,9 @@ public:
   bool processMessage(uint8_t *buffer, uint16_t size) {
 
     if(this->isStartingPacket(buffer)) {
-      Serial.println("This is starting packet");
-      
-      if(this->messageBuffer != NULL)
-        free(this->messageBuffer);
-      
+      Serial.println("This is starting packet");      
+      this->reset();
+       
       this->firstPacketComplete = this->processFirstPacket(buffer, size);
      
     } else {
@@ -190,7 +201,7 @@ public:
     return true;
     
   }
-
+  
   void sendStringOnParts(String string, uint16_t msg_handler) {
 
     if (string.length() > 0 && ble.attServerCanSendPacket()) {

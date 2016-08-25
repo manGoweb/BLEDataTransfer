@@ -113,8 +113,8 @@ function messagesSubscribe() {
 
 function sendMessage() {
 
-    let message = randomstring.generate((Math.random() * 10000) + 1);
-    //let message = "Hey whats upp? This is rly long message including json object: {\"propertyName\": \"propertyValue\"} ";
+    let message = randomstring.generate((Math.random() * 1000) + 1);
+    //message = "Hey whats upp? This is rly long message including json object: {\"propertyName\": \"propertyValue\"} ";
     console.log(`Sending a message(${message.length}): ${message}`);
 
 

@@ -123,7 +123,8 @@ int gattWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
         if(msgService.isMessageComplete()) {
           Serial.println("Message complete");
           if(msgService.isMessageValid()) {
-            Serial.println("Message valid");
+            Serial.println("Message valid:");
+            Serial.println(msgService.getMessageBuffer());
           } else {
             Serial.println("INVALID MESSAGE MD5");
           }
