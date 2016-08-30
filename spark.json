@@ -1,0 +1,8 @@
+
+{
+  "name": "BDTMessageService",
+  "author": "Zdenek Brabec <zd.brabec@gmail.com>",
+  "license": "MIT",
+  "version": "0.0.1",
+  "description": "Service for sending greater amount of data through BLE"
+}
