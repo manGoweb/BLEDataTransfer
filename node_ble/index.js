@@ -11,8 +11,8 @@ const SendingMessage = require('./sending_message');
 
 noble.on('stateChange', function(state) {
     if (state === 'poweredOn') {
-        console.log('scanning...');
-        noble.startScanning([redbearUuid], false);
+        console.log(`Scanning for ${redbearUuid}`);
+        noble.startScanning([], false);
     }
     else {
         console.log("stop scanning");
@@ -30,6 +30,7 @@ noble.on('discover', function(peripheral) {
 
     peripheral.connect((err) => {
 
+        if(err) throw err;
         console.log("Connected");
 
         peripheral.discoverServices([], (err, services) => {
@@ -103,7 +104,7 @@ function messagesSubscribe() {
 
         console.log("SUBSCRIBE", err);
 
-        setInterval(sendMessage, 2000);
+        setInterval(sendMessage, 5000);
 
     });
 

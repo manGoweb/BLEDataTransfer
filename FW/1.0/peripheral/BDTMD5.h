@@ -1,8 +1,11 @@
 #ifndef BDTMD5_h
 #define BDTMD5_h
 
+#if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
-
+#elif defined(SPARK)
+#include "application.h"
+#endif
 //this is the copy of https://github.com/tzikis/ArduinoMD5
 
 /*
@@ -32,22 +35,22 @@
 typedef unsigned long MD5_u32plus;
 
 typedef struct {
-	MD5_u32plus lo, hi;
-	MD5_u32plus a, b, c, d;
-	unsigned char buffer[64];
-	MD5_u32plus block[16];
+    MD5_u32plus lo, hi;
+    MD5_u32plus a, b, c, d;
+    unsigned char buffer[64];
+    MD5_u32plus block[16];
 } MD5_CTX;
 
 class BDTMD5
 {
 public:
-	BDTMD5();
-	static unsigned char* make_hash(char *arg);
-	static char* make_digest(const unsigned char *digest, int len);
- 	static const void *body(void *ctxBuf, const void *data, size_t size);
-	static void MD5Init(void *ctxBuf);
-	static void MD5Final(unsigned char *result, void *ctxBuf);
-	static void MD5Update(void *ctxBuf, const void *data, size_t size);
+    BDTMD5();
+    static unsigned char* make_hash(char *arg);
+    static char* make_digest(const unsigned char *digest, int len);
+    static const void *body(void *ctxBuf, const void *data, size_t size);
+    static void MD5Init(void *ctxBuf);
+    static void MD5Final(unsigned char *result, void *ctxBuf);
+    static void MD5Update(void *ctxBuf, const void *data, size_t size);
 };
 
 #endif

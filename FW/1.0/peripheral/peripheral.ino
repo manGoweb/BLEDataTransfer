@@ -2,6 +2,11 @@
 #include "BDTMD5.h"
 #include "BDTMessageService.h"
 
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#elif defined(SPARK)
+#include "application.h"
+#endif
 
 #if defined(ARDUINO)
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -25,10 +30,10 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
                  Variable Definitions
  ******************************************************/
 // Primary service 128-bits UUID
-static uint8_t service1_uuid[16] = { 0x71, 0x3d, 0x00, 0x00, 0x50, 0x3e, 0x4c, 0x75, 0xba, 0x94, 0x31, 0x48, 0xf1, 0x8d, 0x94, 0x1e };
+static uint8_t service1_uuid[16] = { 0x66, 0x3d, 0x01, 0x00, 0x50, 0x3e, 0x4c, 0x75, 0xba, 0x94, 0x31, 0x48, 0xf1, 0x8d, 0x94, 0x1e };
 // Characteristics 128-bits UUID
-static uint8_t service1_tx_uuid[16] = { 0x71,0x3d,0x00,0x03,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e };
-static uint8_t service1_rx_uuid[16] = { 0x71,0x3d,0x00,0x02,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e };
+static uint8_t service1_tx_uuid[16] = { 0x66,0x3d,0x00,0x04,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e };
+static uint8_t service1_rx_uuid[16] = { 0x66,0x3d,0x00,0x03,0x50,0x3e,0x4c,0x75,0xba,0x94,0x31,0x48,0xf1,0x8d,0x94,0x1e };
 
 // GAP and GATT characteristics value
 static uint8_t  appearance[2] = {
@@ -73,7 +78,7 @@ static uint8_t adv_data[] = {
 static uint8_t scan_response[] = {
   0x0F,
   BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME,
-  'V', 'Y',  'J', 'E', 'T', 'A', '-', 'P','O','K','L','I','C','E'
+  'B', 'L', 'E', '-', 'M', 'A', 'N', 'G','O','-','P','E','R','I'
 };
 
 
@@ -93,16 +98,14 @@ char rx_buf[TXRX_BUF_LEN];
 static uint8_t rx_buf_num;
 static uint8_t rx_state = 0;
 
-BDTMessageService msgService = BDTMessageService();
-
 static void deviceConnectedCallback(BLEStatus_t status, uint16_t handle) {
+    Serial.println("Conneting...");
   switch (status) {
     case BLE_STATUS_OK:
-      Serial.print("BLE device connection established! Connection handle: ");
-      Serial.println(handle, HEX);
+      Serial.println("BLE device connection established!");
       conn_handle = handle;
       break;
-    default: 
+    default:
       Serial.println("Failed to establish connection with peer device!");
       break;
   }
@@ -112,19 +115,18 @@ static void deviceDisconnectedCallback(uint16_t handle) {
   Serial.println("Disconnected.");
 }
 
+BDTMessageService *msgService = new BDTMessageService();
 
 int gattWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
-  Serial.print("Write value handler: ");
-  Serial.println(value_handle, HEX);
 
   if (character1_handle == value_handle) {
-      Serial.println("Got message:");
-      if (msgService.processMessage(buffer, size)) {
-        if(msgService.isMessageComplete()) {
-          Serial.println("Message complete");
-          if(msgService.isMessageValid()) {
-            Serial.println("Message valid:");
-            Serial.println(msgService.getMessageBuffer());
+      Serial.println("Got message");
+      if (msgService->processMessage(buffer, size)) {
+        if(msgService->isMessageComplete()) {
+            Serial.println("MESSAGE complete!");
+          if(msgService->isMessageValid()) {
+            Serial.println("MESSAGE VALID!");
+            Serial.println(msgService->getMessageBuffer());
           } else {
             Serial.println("INVALID MESSAGE MD5");
           }
@@ -134,14 +136,13 @@ int gattWriteCallback(uint16_t value_handle, uint8_t *buffer, uint16_t size) {
       } else {
         Serial.println("Something went wrong!");
       }
-  
-    Serial.println(" ");
+
   }
-  
+
   return 0;
 }
 
-static void  characteristic2_notify(btstack_timer_source_t *ts) {   
+static void  characteristic2_notify(btstack_timer_source_t *ts) {
   if (Serial.available()) {
     //read the serial command into a buffer
     uint8_t rx_len = min(Serial.available(), CHARACTERISTIC2_MAX_LEN);
@@ -161,7 +162,6 @@ static void  characteristic2_notify(btstack_timer_source_t *ts) {
   ble.addTimer(ts);
 }
 
-
 //trimms string if too long and sends it in messages to connected device
 
 
@@ -172,6 +172,9 @@ static void  characteristic2_notify(btstack_timer_source_t *ts) {
    @brief Setup.
 */
 void setup() {
+
+
+
   Serial.begin(115200);
   delay(5000);
   Serial.println("BLE peripheral demo.");
@@ -183,7 +186,7 @@ void setup() {
   ble.onDisconnectedCallback(deviceDisconnectedCallback);
   ble.onDataWriteCallback(gattWriteCallback);
 
-   
+
   ble.addService(BLE_UUID_GAP);
   ble.addCharacteristic(BLE_UUID_GAP_CHARACTERISTIC_DEVICE_NAME, ATT_PROPERTY_READ, (uint8_t*)BLE_DEVICE_NAME, sizeof(BLE_DEVICE_NAME));
   ble.addCharacteristic(BLE_UUID_GAP_CHARACTERISTIC_APPEARANCE, ATT_PROPERTY_READ, appearance, sizeof(appearance));
@@ -195,9 +198,6 @@ void setup() {
   ble.addService(service1_uuid);
   character1_handle = ble.addCharacteristicDynamic(service1_tx_uuid, ATT_PROPERTY_NOTIFY|ATT_PROPERTY_WRITE|ATT_PROPERTY_WRITE_WITHOUT_RESPONSE, characteristic1_data, CHARACTERISTIC1_MAX_LEN);
   character2_handle = ble.addCharacteristicDynamic(service1_rx_uuid, ATT_PROPERTY_NOTIFY, characteristic2_data, CHARACTERISTIC2_MAX_LEN);
-
-
-
 
   // Set BLE advertising parameters
   ble.setAdvertisementParams(&adv_params);
@@ -214,7 +214,7 @@ void setup() {
   characteristic2.process = &characteristic2_notify;
   ble.setTimer(&characteristic2, 500);//100ms
   ble.addTimer(&characteristic2);
-  
+
 
 }
 
@@ -223,9 +223,9 @@ void setup() {
 */
 void loop() {
 
-
-      //delay(5000);
-      //msgService.sendStringOnParts("Ahoj tohle je very first message timle podivnym peklostrojem! Dlouha jako krava a plna podivnych znaku {\"json\":\"adasdasasdasasdasd\"}", character2_handle);
+        //delay(5000);
+        //Serial.println("OOOA");
+        //msgService.sendStringOnParts("Ahoj tohle je very first message timle podivnym peklostrojem! Dlouha jako krava a plna podivnych znaku {\"json\":\"adasdasasdasasdasd\"}", character2_handle);
 
 
 }
